@@ -1,0 +1,219 @@
+               fvg.time = iTime(_Symbol,Timeframe,i+1);
+               fvg.high = iLow(_Symbol,Timeframe,i);
+               fvg.low = iHigh(_Symbol,Timeframe,i+2);
+
+               if(iLow(_Symbol,Timeframe,iLowest(_Symbol,Timeframe,MODE_LOW,i+1)) <= fvg.low)
+                 {
+                  delete fvg;
+                  break; //continue;
+                 }
+
+               fvg.draw(timeStart,timeEnd);
+
+               lastDay = structTime.day_of_year;
+               break;
+              }
+            //}
+            //}
+            if(iLow(_Symbol,Timeframe,i+2) - iHigh(_Symbol,Timeframe,i) > MinFvgPoints * _Point)  //fvg dn
+              {
+               fvg = new CFairValueGap();
+               fvg.direction = -1;
+               fvg.time = iTime(_Symbol,Timeframe,i+1);
+               fvg.high = iLow(_Symbol,Timeframe,i+2);
+               fvg.low = iHigh(_Symbol,Timeframe,i);
+
+               if(iHigh(_Symbol,Timeframe,iHighest(_Symbol,Timeframe,MODE_HIGH,i+1)) >= fvg.high)
+                 {
+                  delete fvg;
+                  break; //continue;
+                 }
+
+               fvg.draw(timeStart,timeEnd);
+
+               lastDay = structTime.day_of_year;
+               break;
+              }
+           }
+        }
+
+      double bid = SymbolInfoDouble(_Symbol,SYMBOL_BID);
+      double ask = SymbolInfoDouble(_Symbol,SYMBOL_ASK);
+      if(CheckPointer(fvg) != POINTER_INVALID && fvg.direction > 0 && ask < fvg.high)
+        {
+         double entry = ask;
+         double tp = iHigh(_Symbol,Timeframe,iHighest(_Symbol,Timeframe,MODE_HIGH,iBarShift(_Symbol,Timeframe,fvg.time)));
+         double sl = iLow(_Symbol,Timeframe,iLowest(_Symbol,Timeframe,MODE_LOW,5,iBarShift(_Symbol,Timeframe,fvg.time)));
+         double lots = Lots;
+         if(Lots == 0)
+            lots = calcLots(entry - sl);
+
+         fvg.drawTradeLevels(tp,sl,timeStart,timeEnd);
+
+         if(tp - entry > MinTpPoints * _Point)
+           {
+            if(trade.Buy(lots, _Symbol,entry,sl,tp))
+              {
+               Print("__FUNCTION__," + "Buy signal...");
+              }
+           }
+         //}
+
+         delete fvg;
+        }
+
+      if(CheckPointer(fvg) != POINTER_INVALID && fvg.direction < 0 && bid > fvg.low)
+        {
+         double entry = bid;
+         double tp = iLow(_Symbol,Timeframe,iLowest(_Symbol,Timeframe,MODE_LOW,iBarShift(_Symbol,Timeframe,fvg.time)));
+         double sl = iHigh(_Symbol,Timeframe,iHighest(_Symbol,Timeframe,MODE_HIGH,5,iBarShift(_Symbol,Timeframe,fvg.time)));
+         double lots = Lots;
+         if(Lots == 0)
+            lots = calcLots(sl - entry);
+
+         fvg.drawTradeLevels(tp,sl,timeStart,timeEnd);
+
+         if(entry - tp > MinTpPoints * _Point)
+           {
+            if(trade.Sell(lots,_Symbol,entry,sl,tp))
+              {
+               Print("__FUNCTION__," + "Sell signal...");
+              }
+           }
+
+         delete fvg;
+        }
+     }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double calcLots(double slDist)
+  {
+   double risk = AccountInfoDouble(ACCOUNT_BALANCE) * RiskPercent / 100;
+
+   double ticksize = SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_SIZE);
+   double tickvalue = SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_VALUE);
+
+   if(ticksize == 0)
+      return -1;
+
+   double moneyPerLot = slDist / ticksize * tickvalue;
+
+   if(moneyPerLot == 0)
+      return -1;
+
+   double lots = NormalizeDouble(risk/moneyPerLot,2);
+   return lots;
+  }
+//+------------------------------------------------------------------+               fvg.time = iTime(_Symbol,Timeframe,i+1);
+               fvg.high = iLow(_Symbol,Timeframe,i);
+               fvg.low = iHigh(_Symbol,Timeframe,i+2);
+
+               if(iLow(_Symbol,Timeframe,iLowest(_Symbol,Timeframe,MODE_LOW,i+1)) <= fvg.low)
+                 {
+                  delete fvg;
+                  break; //continue;
+                 }
+
+               fvg.draw(timeStart,timeEnd);
+
+               lastDay = structTime.day_of_year;
+               break;
+              }
+            //}
+            //}
+            if(iLow(_Symbol,Timeframe,i+2) - iHigh(_Symbol,Timeframe,i) > MinFvgPoints * _Point)  //fvg dn
+              {
+               fvg = new CFairValueGap();
+               fvg.direction = -1;
+               fvg.time = iTime(_Symbol,Timeframe,i+1);
+               fvg.high = iLow(_Symbol,Timeframe,i+2);
+               fvg.low = iHigh(_Symbol,Timeframe,i);
+
+               if(iHigh(_Symbol,Timeframe,iHighest(_Symbol,Timeframe,MODE_HIGH,i+1)) >= fvg.high)
+                 {
+                  delete fvg;
+                  break; //continue;
+                 }
+
+               fvg.draw(timeStart,timeEnd);
+
+               lastDay = structTime.day_of_year;
+               break;
+              }
+           }
+        }
+
+      double bid = SymbolInfoDouble(_Symbol,SYMBOL_BID);
+      double ask = SymbolInfoDouble(_Symbol,SYMBOL_ASK);
+      if(CheckPointer(fvg) != POINTER_INVALID && fvg.direction > 0 && ask < fvg.high)
+        {
+         double entry = ask;
+         double tp = iHigh(_Symbol,Timeframe,iHighest(_Symbol,Timeframe,MODE_HIGH,iBarShift(_Symbol,Timeframe,fvg.time)));
+         double sl = iLow(_Symbol,Timeframe,iLowest(_Symbol,Timeframe,MODE_LOW,5,iBarShift(_Symbol,Timeframe,fvg.time)));
+         double lots = Lots;
+         if(Lots == 0)
+            lots = calcLots(entry - sl);
+
+         fvg.drawTradeLevels(tp,sl,timeStart,timeEnd);
+
+         if(tp - entry > MinTpPoints * _Point)
+           {
+            if(trade.Buy(lots, _Symbol,entry,sl,tp))
+              {
+               Print("__FUNCTION__," + "Buy signal...");
+              }
+           }
+         //}
+
+         delete fvg;
+        }
+
+      if(CheckPointer(fvg) != POINTER_INVALID && fvg.direction < 0 && bid > fvg.low)
+        {
+         double entry = bid;
+         double tp = iLow(_Symbol,Timeframe,iLowest(_Symbol,Timeframe,MODE_LOW,iBarShift(_Symbol,Timeframe,fvg.time)));
+         double sl = iHigh(_Symbol,Timeframe,iHighest(_Symbol,Timeframe,MODE_HIGH,5,iBarShift(_Symbol,Timeframe,fvg.time)));
+         double lots = Lots;
+         if(Lots == 0)
+            lots = calcLots(sl - entry);
+
+         fvg.drawTradeLevels(tp,sl,timeStart,timeEnd);
+
+         if(entry - tp > MinTpPoints * _Point)
+           {
+            if(trade.Sell(lots,_Symbol,entry,sl,tp))
+              {
+               Print("__FUNCTION__," + "Sell signal...");
+              }
+           }
+
+         delete fvg;
+        }
+     }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double calcLots(double slDist)
+  {
+   double risk = AccountInfoDouble(ACCOUNT_BALANCE) * RiskPercent / 100;
+
+   double ticksize = SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_SIZE);
+   double tickvalue = SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_VALUE);
+
+   if(ticksize == 0)
+      return -1;
+
+   double moneyPerLot = slDist / ticksize * tickvalue;
+
+   if(moneyPerLot == 0)
+      return -1;
+
+   double lots = NormalizeDouble(risk/moneyPerLot,2);
+   return lots;
+  }
+//+------------------------------------------------------------------+
