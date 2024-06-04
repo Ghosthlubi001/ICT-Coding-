@@ -1,0 +1,198 @@
+//+------------------------------------------------------------------+
+//|                                                      ICT Unicorn Strategy [HLUBI-FX].mq5 |
+//|                        HLUBI-FX                                              |
+//+------------------------------------------------------------------+
+#property strict
+
+#include <Trade\Trade.mqh>
+
+//--- input parameters
+input int Swings = 10;
+input bool Bull = true;
+input color BullColor = clrGreen;
+input bool Bear = true;
+input color BearColor = clrRed;
+input bool Combine = false;
+input double Risk = 1.0;
+input double Reward = 1.0;
+input bool TrailingStop = false;
+input int TrailLen = 5;
+input bool ShowTargets = true;
+input color RiskColor = clrGray;
+input color RewardColor = clrBlue;
+input double LotSize = 0.1;
+input double StopLoss = 50; // Stop loss in points
+input double TakeProfit = 100; // Take profit in points
+
+//--- indicator buffers
+double BullBuffer[];
+double BearBuffer[];
+
+//--- indicator handles
+int unicornHandle;
+
+//--- trade object
+CTrade trade;
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   //--- indicator buffers mapping
+   SetIndexBuffer(0, BullBuffer);
+   SetIndexBuffer(1, BearBuffer);
+   
+   //--- set indicator properties
+   IndicatorSetString(INDICATOR_SHORTNAME, "ICT Unicorn Strategy [LuxAlgo]");
+   
+   //--- create indicator handle
+   unicornHandle = IndicatorCreate(0, "ICT Unicorn Model [LuxAlgo]", INDICATOR_CALCULATIONS);
+   
+   if (unicornHandle == INVALID_HANDLE)
+   {
+      Print("Failed to create indicator handle");
+      return INIT_FAILED;
+   }
+   
+   return INIT_SUCCEEDED;
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime& time[],
+                const double& open[],
+                const double& high[],
+                const double& low[],
+                const double& close[],
+                const long& tick_volume[],
+                const long& volume[],
+                const int& spread[])
+{
+   int limit = rates_total - prev_calculated;
+   
+   for (int i = 0; i < limit; i++)
+   {
+      BullBuffer[i] = 0.0;
+      BearBuffer[i] = 0.0;
+   }
+
+   for (int i = Swings; i < rates_total - Swings; i++)
+   {
+      bool isSwingHigh = true;
+      bool isSwingLow = true;
+      
+      for (int j = 1; j <= Swings; j++)
+      {
+         if (high[i] <= high[i - j] || high[i] <= high[i + j])
+            isSwingHigh = false;
+         if (low[i] >= low[i - j] || low[i] >= low[i + j])
+            isSwingLow = false;
+      }
+      
+      if (isSwingHigh && Bear)
+      {
+         BearBuffer[i] = high[i];
+         if (ShowTargets)
+         {
+            double targetHigh = high[i] * (1 - Reward / Risk);
+            double stopHigh = high[i] * (1 + Reward / Risk);
+            ObjectCreate(0, "BearTarget" + IntegerToString(i), OBJ_TREND, 0, time[i], targetHigh, time[i + Swings], targetHigh);
+            ObjectSetInteger(0, "BearTarget" + IntegerToString(i), OBJPROP_COLOR, RewardColor);
+            ObjectCreate(0, "BearStop" + IntegerToString(i), OBJ_TREND, 0, time[i], stopHigh, time[i + Swings], stopHigh);
+            ObjectSetInteger(0, "BearStop" + IntegerToString(i), OBJPROP_COLOR, RiskColor);
+         }
+      }
+      
+      if (isSwingLow && Bull)
+      {
+         BullBuffer[i] = low[i];
+         if (ShowTargets)
+         {
+            double targetLow = low[i] * (1 + Reward / Risk);
+            double stopLow = low[i] * (1 - Reward / Risk);
+            ObjectCreate(0, "BullTarget" + IntegerToString(i), OBJ_TREND, 0, time[i], targetLow, time[i + Swings], targetLow);
+            ObjectSetInteger(0, "BullTarget" + IntegerToString(i), OBJPROP_COLOR, RewardColor);
+            ObjectCreate(0, "BullStop" + IntegerToString(i), OBJ_TREND, 0, time[i], stopLow, time[i + Swings], stopLow);
+            ObjectSetInteger(0, "BullStop" + IntegerToString(iThe code continuation:
+
+```cpp
+], OBJPROP_COLOR, RiskColor);
+         }
+      }
+   }
+
+   return rates_total;
+}
+
+//+------------------------------------------------------------------+
+//| Custom expert initialization function                            |
+//+------------------------------------------------------------------+
+int OnInitExpert()
+{
+   //--- check if the indicator handle was created successfully
+   if (unicornHandle == INVALID_HANDLE)
+   {
+      Print("Invalid indicator handle");
+      return INIT_FAILED;
+   }
+   
+   //--- attach the indicator to the chart
+   if (!ChartIndicatorAdd(0, 0, unicornHandle))
+   {
+      Print("Failed to attach the indicator to the chart");
+      return INIT_FAILED;
+   }
+   
+   return INIT_SUCCEEDED;
+}
+
+//+------------------------------------------------------------------+
+//| Custom expert deinitialization function                          |
+//+------------------------------------------------------------------+
+void OnDeinitExpert()
+{
+   //--- release the indicator handle
+   if (unicornHandle != INVALID_HANDLE)
+   {
+      IndicatorRelease(unicornHandle);
+      unicornHandle = INVALID_HANDLE;
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Custom expert iteration function                                 |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   //--- check if there are open positions
+   if (trade.PositionsTotal() > 0)
+      return;
+
+   //--- check the last values of the indicator buffers
+   double lastBull = BullBuffer[1];
+   double lastBear = BearBuffer[1];
+   
+   //--- check for bullish signal
+   if (Bull && lastBull > 0.0)
+   {
+      //--- open a buy order
+      double stopLossPrice = Ask - StopLoss * Point;
+      double takeProfitPrice = Ask + TakeProfit * Point;
+      if (trade.Buy(LotSize, stopLossPrice, takeProfitPrice))
+         Print("Buy order opened");
+   }
+   
+   //--- check for bearish signal
+   if (Bear && lastBear > 0.0)
+   {
+      //--- open a sell order
+      double stopLossPrice = Bid + StopLoss * Point;
+      double takeProfitPrice = Bid - TakeProfit * Point;
+      if (trade.Sell(LotSize, stopLossPrice, takeProfitPrice))
+         Print("Sell order opened");
+   }
+}
